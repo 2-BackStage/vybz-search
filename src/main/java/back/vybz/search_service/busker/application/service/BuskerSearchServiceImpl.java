@@ -55,13 +55,13 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 .index(INDEX_NAME)
                 .query(query)
                 .size(pageSize + 1) // 커서 페이징
-                .sort(s -> s.field(f -> f.field("nickname.keyword").order(SortOrder.Asc)))
-                .sort(s -> s.field(f -> f.field("buskerUuid").order(SortOrder.Desc)));
+                .sort(s -> s.field(f -> f.field("followerCount").order(SortOrder.Desc)))  // ⭐️ followerCount 정렬
+                .sort(s -> s.field(f -> f.field("buskerUuid").order(SortOrder.Desc)));    // ⭐️ 부가 정렬 (cursor 안정성)
 
         // ✅ search_after 적용
-        if (requestScrollSearchBuskerDto.getCursorBuskerUuid() != null) {
+        if (requestScrollSearchBuskerDto.getCursorFollowerCount() != null && requestScrollSearchBuskerDto.getCursorBuskerUuid() != null) {
             searchRequestBuilder.searchAfter(List.of(
-                    // FieldValue.of(requestScrollSearchBuskerDto.getCursorFollowerCount()), // followerCount 사용 X
+                    FieldValue.of(requestScrollSearchBuskerDto.getCursorFollowerCount()),
                     FieldValue.of(requestScrollSearchBuskerDto.getCursorBuskerUuid())
             ));
         }
@@ -76,12 +76,12 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
         boolean hasNext = hits.size() > pageSize;
 
         // ✅ nextCursor 준비
-        // Integer cursorFollowerCount = null;
+        Integer cursorFollowerCount = null;
         String cursorBuskerUuid = null;
         if (hasNext) {
             Hit<BuskerSearchDocument> lastHit = hits.get(pageSize - 1);
             BuskerSearchDocument doc = lastHit.source();
-            // cursorFollowerCount = doc.getFollowerCount();  // followerCount 사용 X
+            cursorFollowerCount = doc.getFollowerCount();
             cursorBuskerUuid = doc.getBuskerUuid();
         }
 
@@ -94,7 +94,7 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                             .buskerUuid(doc.getBuskerUuid())
                             .nickname(doc.getNickname())
                             .profileImageUrl(doc.getProfileImageUrl())
-                            // .followerCount(doc.getFollowerCount())  // followerCount 사용 X
+                            .followerCount(doc.getFollowerCount())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -103,7 +103,7 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
         return CursorPage.<ResponseScrollSearchBuskerDto>builder()
                 .content(content)
                 .hasNext(hasNext)
-                // .nextCursorFollowerCount(cursorFollowerCount)  // followerCount 사용 X
+                .nextCursorFollowerCount(cursorFollowerCount)
                 .nextCursorBuskerUuid(cursorBuskerUuid)
                 .build();
     }
