@@ -11,7 +11,7 @@ public class RequestScrollSearchBuskerDto {
 
     private String keyword;
     private Integer size;
-//    private Integer cursorFollowerCount;
+    private Integer cursorFollowerCount;
     private String cursorBuskerUuid;
 
     @Builder
@@ -21,14 +21,14 @@ public class RequestScrollSearchBuskerDto {
                                         String cursorBuskerUuid) {
         this.keyword = keyword;
         this.size = size;
-//        this.cursorFollowerCount = cursorFollowerCount;
+        this.cursorFollowerCount = cursorFollowerCount;
         this.cursorBuskerUuid = cursorBuskerUuid;
     }
     public static RequestScrollSearchBuskerDto from(RequestScrollSearchBuskerVo requestScrollSearchBuskerVo) {
         return RequestScrollSearchBuskerDto.builder()
                 .keyword(requestScrollSearchBuskerVo.getKeyword())
                 .size(requestScrollSearchBuskerVo.getSize())
-//                .cursorFollowerCount(requestScrollSearchBuskerVo.getCursorFollowerCount())
+                .cursorFollowerCount(requestScrollSearchBuskerVo.getCursorFollowerCount())
                 .cursorBuskerUuid(requestScrollSearchBuskerVo.getCursorBuskerUuid())
                 .build();
     }

@@ -12,14 +12,14 @@ public class ResponseScrollSearchBuskerDto {
     private String buskerUuid;
     private String nickname;
     private String profileImageUrl;
-    // private Integer followerCount;  // followerCount 사용 X
+     private Integer followerCount;  // followerCount 사용 X
 
     @Builder
-    private ResponseScrollSearchBuskerDto(String buskerUuid, String nickname, String profileImageUrl /*, Integer followerCount */) {
+    private ResponseScrollSearchBuskerDto(String buskerUuid, String nickname, String profileImageUrl , Integer followerCount ) {
         this.buskerUuid = buskerUuid;
         this.nickname = nickname;
         this.profileImageUrl = profileImageUrl;
-        // this.followerCount = followerCount;
+         this.followerCount = followerCount;
     }
 
     public ResponseScrollSearchBuskerVo toVo() {
@@ -27,7 +27,7 @@ public class ResponseScrollSearchBuskerDto {
                 .buskerUuid(buskerUuid)
                 .nickname(nickname)
                 .profileImageUrl(profileImageUrl)
-                // .followerCount(followerCount)
+                 .followerCount(followerCount)
                 .build();
     }
 }
