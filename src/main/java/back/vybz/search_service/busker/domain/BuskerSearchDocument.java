@@ -19,6 +19,7 @@ public class BuskerSearchDocument {
     @Id
     private String buskerUuid;
     private String nickname;
+    private String nicknameChosung;
     private String profileImageUrl;
     private Integer followerCount;
 
