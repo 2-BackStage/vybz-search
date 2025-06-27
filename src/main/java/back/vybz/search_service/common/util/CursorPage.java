@@ -14,15 +14,28 @@ public class CursorPage<T> {
 
     private List<T> content;
     private Boolean hasNext;
+
+    // Busker 검색용 커서
     private Integer nextCursorFollowerCount;
     private String nextCursorBuskerUuid;
 
+    // Reels 검색용 커서
+    private String nextCursorId;
+    private Long nextCursorCreatedAt; // ⬅ 여기 타입을 Long으로 변경함
+
     @Builder
-    private CursorPage(List<T> content, Boolean hasNext, Integer nextCursorFollowerCount, String nextCursorBuskerUuid) {
+    private CursorPage(List<T> content,
+                       Boolean hasNext,
+                       Integer nextCursorFollowerCount,
+                       String nextCursorBuskerUuid,
+                       String nextCursorId,
+                       Long nextCursorCreatedAt) { // ⬅ 생성자도 타입 변경
         this.content = content;
         this.hasNext = hasNext;
         this.nextCursorFollowerCount = nextCursorFollowerCount;
         this.nextCursorBuskerUuid = nextCursorBuskerUuid;
+        this.nextCursorId = nextCursorId;
+        this.nextCursorCreatedAt = nextCursorCreatedAt;
     }
 
     public <U> CursorPage<U> map(Function<? super T, ? extends U> mapper) {
@@ -35,6 +48,8 @@ public class CursorPage<T> {
                 .hasNext(this.hasNext)
                 .nextCursorFollowerCount(this.nextCursorFollowerCount)
                 .nextCursorBuskerUuid(this.nextCursorBuskerUuid)
+                .nextCursorId(this.nextCursorId)
+                .nextCursorCreatedAt(this.nextCursorCreatedAt) // ⬅ 그대로 유지
                 .build();
     }
 }

@@ -9,12 +9,14 @@ import back.vybz.search_service.common.entity.BaseResponseEntity;
 import back.vybz.search_service.common.util.CursorPage;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 
-@Slf4j
+
 @RestController
 @RequestMapping("/api/v1/search")
 @RequiredArgsConstructor
@@ -29,12 +31,6 @@ public class BuskerSearchController {
     )
     @GetMapping("/buskers")
     public BaseResponseEntity<CursorPage<ResponseScrollSearchBuskerVo>> searchBuskers(@ModelAttribute RequestScrollSearchBuskerVo requestScrollSearchBuskerVo) throws IOException {
-
-        log.debug("🔍 [검색 요청] keyword='{}', size={}, cursorFollowerCount={}, cursorBuskerUuid='{}'",
-                requestScrollSearchBuskerVo.getKeyword(),
-                requestScrollSearchBuskerVo.getSize(),
-                requestScrollSearchBuskerVo.getCursorFollowerCount(),
-                requestScrollSearchBuskerVo.getCursorBuskerUuid());
         return new BaseResponseEntity<>(
                 buskerSearchService.searchBuskers(RequestScrollSearchBuskerDto.from(requestScrollSearchBuskerVo))
                         .map(ResponseScrollSearchBuskerDto::toVo)

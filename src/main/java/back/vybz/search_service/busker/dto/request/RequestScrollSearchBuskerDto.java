@@ -24,6 +24,7 @@ public class RequestScrollSearchBuskerDto {
         this.cursorFollowerCount = cursorFollowerCount;
         this.cursorBuskerUuid = cursorBuskerUuid;
     }
+
     public static RequestScrollSearchBuskerDto from(RequestScrollSearchBuskerVo requestScrollSearchBuskerVo) {
         return RequestScrollSearchBuskerDto.builder()
                 .keyword(requestScrollSearchBuskerVo.getKeyword())

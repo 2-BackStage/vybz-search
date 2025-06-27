@@ -1,0 +1,102 @@
+package back.vybz.search_service.feed.application.service;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+import jakarta.annotation.PostConstruct;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ReelsIndexInitializer {
+
+    private final ElasticsearchClient elasticsearchClient;
+    private static final String REELS_INDEX_NAME = "create-reels-search";
+
+    @PostConstruct
+    public void init() throws IOException {
+        createReelsSearchIndex();
+    }
+
+    public void createReelsSearchIndex() throws IOException {
+        boolean exists = elasticsearchClient.indices().exists(e -> e.index(REELS_INDEX_NAME)).value();
+        if (exists) {
+            log.info("[ES] Index '{}' already exists. Skipping creation.", REELS_INDEX_NAME);
+            return;
+        }
+
+        // ✅ 분석기 + 토크나이저 설정 JSON
+        JsonObject analysisJson = Json.createObjectBuilder()
+                .add("analyzer", Json.createObjectBuilder()
+                        .add("edge_ngram_analyzer", Json.createObjectBuilder()
+                                .add("type", "custom")
+                                .add("tokenizer", "custom_edge_ngram_tokenizer")
+                                .add("filter", Json.createArrayBuilder()
+                                        .add("lowercase")
+                                )
+                        )
+                        .add("nori_analyzer", Json.createObjectBuilder()
+                                .add("type", "custom")
+                                .add("tokenizer", "nori_tokenizer")
+                                .add("filter", Json.createArrayBuilder()
+                                        .add("lowercase")
+                                )
+                        )
+                )
+                .add("tokenizer", Json.createObjectBuilder()
+                        .add("custom_edge_ngram_tokenizer", Json.createObjectBuilder()
+                                .add("type", "edge_ngram")
+                                .add("min_gram", 1)
+                                .add("max_gram", 20)
+                                .add("token_chars", Json.createArrayBuilder()
+                                        .add("letter")
+                                        .add("digit")
+                                )
+                        )
+                )
+                .build();
+
+        String settingsJson = Json.createObjectBuilder()
+                .add("number_of_shards", 1)
+                .add("number_of_replicas", 1)
+                .add("refresh_interval", "1s")
+                .add("max_result_window", 10000)
+                .add("analysis", analysisJson)
+                .build()
+                .toString();
+
+        InputStream settingsStream = new ByteArrayInputStream(settingsJson.getBytes(StandardCharsets.UTF_8));
+
+        // ✅ 인덱스 생성 with 분석기 설정 & 매핑
+        elasticsearchClient.indices().create(c -> c
+                .index(REELS_INDEX_NAME)
+                .settings(s -> s.withJson(settingsStream))
+                .mappings(TypeMapping.of(m -> m
+                        .properties("feedId", p -> p.keyword(k -> k))
+                        .properties("writerUuid", p -> p.keyword(k -> k))
+                        .properties("content", p -> p.text(t -> t
+                                .analyzer("nori_analyzer")
+                                .fields("autocomplete", f -> f.text(tt -> tt
+                                        .analyzer("edge_ngram_analyzer")
+                                        .searchAnalyzer("standard")
+                                ))
+                                .fields("keyword", f -> f.keyword(k -> k.ignoreAbove(256)))
+                        ))
+                        .properties("hashTag", p -> p.keyword(k -> k))
+                        .properties("thumbnailUrl", p -> p.keyword(k -> k))
+                        .properties("createdAt", p -> p.long_(l -> l)) // ✅ long 타입으로 수정
+                ))
+        );
+
+        log.info("[ES] Created Index: '{}'", REELS_INDEX_NAME);
+    }
+}
