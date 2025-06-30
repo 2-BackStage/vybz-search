@@ -97,3 +97,4 @@ public class BuskerIndexInitializer {
         log.info("[ES] Created Index: '{}'", BUSKER_INDEX_NAME);
     }
 }
+
