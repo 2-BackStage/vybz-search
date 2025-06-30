@@ -8,6 +8,7 @@ import back.vybz.search_service.common.util.CursorPage;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -30,16 +31,9 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
 
     @Override
     public CursorPage<ResponseScrollSearchBuskerDto> searchBuskers(RequestScrollSearchBuskerDto dto) throws IOException {
-
         String keyword = dto.getKeyword();
-
-        // ✅ keyword null-safe 로그
         log.debug("🔍 [검색 요청] keyword='{}'", keyword);
-        if (keyword == null || keyword.isBlank()) {
-            log.warn("⚠️ 검색 keyword가 null 또는 공백입니다.");
-        }
 
-        // ✅ Query 생성
         Query query;
         if (keyword != null && !keyword.isBlank()) {
             boolean isChosung = ChosungUtils.isChosung(keyword);
@@ -49,7 +43,7 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 query = Query.of(q -> q.term(t -> t.field("nicknameChosung").value(keyword)));
                 log.debug("📘 Query: TERM 검색 on nicknameChosung = {}", keyword);
             } else {
-                query = Query.of(q -> q.match(m -> m.field("nickname.autocomplete").query(keyword))); // 🔄 변경됨
+                query = Query.of(q -> q.match(m -> m.field("nickname.autocomplete").query(keyword)));
                 log.debug("📗 Query: MATCH 검색 on nickname.autocomplete = {}", keyword);
             }
         } else {
@@ -58,7 +52,6 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
         }
 
         int pageSize = dto.getSize() != null ? dto.getSize() : PAGE_DEFAULT_SIZE;
-        log.debug("📦 pageSize = {}", pageSize);
 
         SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder()
                 .index(INDEX_NAME)
@@ -67,13 +60,20 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 .sort(s -> s.field(f -> f.field("followerCount").order(SortOrder.Desc)))
                 .sort(s -> s.field(f -> f.field("buskerUuid").order(SortOrder.Desc)));
 
-        if (dto.getCursorFollowerCount() != null && dto.getCursorBuskerUuid() != null) {
+        // ✅ search_after는 유효한 값이 있을 때만 적용
+        if (dto.getCursorFollowerCount() != null &&
+                dto.getCursorBuskerUuid() != null &&
+                !dto.getCursorBuskerUuid().isBlank() &&
+                !"string".equals(dto.getCursorBuskerUuid())) {
+
             searchRequestBuilder.searchAfter(List.of(
                     FieldValue.of(dto.getCursorFollowerCount()),
                     FieldValue.of(dto.getCursorBuskerUuid())
             ));
             log.debug("➡️ search_after 적용: followerCount = {}, buskerUuid = {}",
                     dto.getCursorFollowerCount(), dto.getCursorBuskerUuid());
+        } else {
+            log.debug("⏭️ search_after 미적용: 첫 페이지 요청 또는 잘못된 커서");
         }
 
         List<Hit<BuskerSearchDocument>> hits = elasticsearchClient.search(
@@ -81,10 +81,7 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 BuskerSearchDocument.class
         ).hits().hits();
 
-        log.debug("🔎 검색 결과 수 = {}", hits.size());
-
         boolean hasNext = hits.size() > pageSize;
-        log.debug("⏭️ hasNext = {}", hasNext);
 
         Integer cursorFollowerCount = null;
         String cursorBuskerUuid = null;
@@ -93,14 +90,12 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
             BuskerSearchDocument doc = lastHit.source();
             cursorFollowerCount = doc.getFollowerCount();
             cursorBuskerUuid = doc.getBuskerUuid();
-            log.debug("📍 nextCursor = [followerCount: {}, buskerUuid: {}]", cursorFollowerCount, cursorBuskerUuid);
         }
 
         List<ResponseScrollSearchBuskerDto> content = hits.stream()
                 .limit(pageSize)
                 .map(hit -> {
                     BuskerSearchDocument doc = hit.source();
-                    log.debug("➡️ 결과 항목: nickname='{}', followerCount={}", doc.getNickname(), doc.getFollowerCount());
                     return ResponseScrollSearchBuskerDto.builder()
                             .buskerUuid(doc.getBuskerUuid())
                             .nickname(doc.getNickname())
