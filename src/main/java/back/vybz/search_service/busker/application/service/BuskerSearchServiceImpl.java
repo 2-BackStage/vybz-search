@@ -8,7 +8,6 @@ import back.vybz.search_service.common.util.CursorPage;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOrder;
-
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -60,7 +59,6 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 .sort(s -> s.field(f -> f.field("followerCount").order(SortOrder.Desc)))
                 .sort(s -> s.field(f -> f.field("buskerUuid").order(SortOrder.Desc)));
 
-        // ✅ search_after는 값이 유효할 때만 적용
         if (dto.getCursorFollowerCount() != null &&
                 dto.getCursorBuskerUuid() != null &&
                 !dto.getCursorBuskerUuid().isBlank() &&
@@ -116,5 +114,4 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 .nextCursorBuskerUuid(cursorBuskerUuid)
                 .build();
     }
-
 }
