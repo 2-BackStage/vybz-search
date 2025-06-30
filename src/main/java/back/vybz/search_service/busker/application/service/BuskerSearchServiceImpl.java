@@ -60,11 +60,11 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 .sort(s -> s.field(f -> f.field("followerCount").order(SortOrder.Desc)))
                 .sort(s -> s.field(f -> f.field("buskerUuid").order(SortOrder.Desc)));
 
-        // ✅ search_after는 유효한 값이 있을 때만 적용
+        // ✅ search_after는 값이 유효할 때만 적용
         if (dto.getCursorFollowerCount() != null &&
                 dto.getCursorBuskerUuid() != null &&
                 !dto.getCursorBuskerUuid().isBlank() &&
-                !"string".equals(dto.getCursorBuskerUuid())) {
+                !"string".equalsIgnoreCase(dto.getCursorBuskerUuid())) {
 
             searchRequestBuilder.searchAfter(List.of(
                     FieldValue.of(dto.getCursorFollowerCount()),
@@ -90,12 +90,16 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
             BuskerSearchDocument doc = lastHit.source();
             cursorFollowerCount = doc.getFollowerCount();
             cursorBuskerUuid = doc.getBuskerUuid();
+            log.debug("📍 nextCursor = [followerCount: {}, buskerUuid: {}]",
+                    cursorFollowerCount, cursorBuskerUuid);
         }
 
         List<ResponseScrollSearchBuskerDto> content = hits.stream()
                 .limit(pageSize)
                 .map(hit -> {
                     BuskerSearchDocument doc = hit.source();
+                    log.debug("➡️ 결과 항목: nickname='{}', followerCount={}",
+                            doc.getNickname(), doc.getFollowerCount());
                     return ResponseScrollSearchBuskerDto.builder()
                             .buskerUuid(doc.getBuskerUuid())
                             .nickname(doc.getNickname())
@@ -112,4 +116,5 @@ public class BuskerSearchServiceImpl implements BuskerSearchService {
                 .nextCursorBuskerUuid(cursorBuskerUuid)
                 .build();
     }
+
 }
