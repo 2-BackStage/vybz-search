@@ -91,9 +91,12 @@ public class ReelsIndexInitializer {
                                 ))
                                 .fields("keyword", f -> f.keyword(k -> k.ignoreAbove(256)))
                         ))
-                        .properties("hashTag", p -> p.keyword(k -> k))
+                        .properties("hashTag", p -> p.text(t -> t
+                                .analyzer("nori_analyzer")
+                                .fields("keyword", f -> f.keyword(k -> k.ignoreAbove(256)))
+                        ))
                         .properties("thumbnailUrl", p -> p.keyword(k -> k))
-                        .properties("createdAt", p -> p.long_(l -> l)) // ✅ long 타입으로 수정
+                        .properties("createdAt", p -> p.long_(l -> l))
                 ))
         );
 
