@@ -103,3 +103,5 @@ public class ReelsIndexInitializer {
         log.info("[ES] Created Index: '{}'", REELS_INDEX_NAME);
     }
 }
+
+
