@@ -66,6 +66,7 @@ public class ReelsIndexInitializer {
                 .build();
 
         String settingsJson = Json.createObjectBuilder()
+                .add("number_of_shards", 5)
                 .add("number_of_replicas", 1)
                 .add("refresh_interval", "1s")
                 .add("max_result_window", 10000)
